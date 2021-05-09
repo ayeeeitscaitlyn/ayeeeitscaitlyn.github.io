@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Caitlyn Warren" />
+    
+    <link rel="shortcut icon" type="image/x-icon" href="../../img/favicon.ico">
+    <title>SDS 348: Project 2</title>
+    <meta name="generator" content="Hugo 0.83.1" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="../../css/main.css" />
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,200bold,400old" />
+    
+    <!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+    
+  </head>
+
+  <body>
+    <div id="wrap">
+      
+      <nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="../../"><i class="fa fa-home"></i></a>
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <div class="navbar-collapse collapse" id="navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+        <li><a href="../../post/">BLOG</a></li>
+        
+        <li><a href="../../projects/">PROJECTS</a></li>
+        
+        <li><a href="../../resume/">RESUME</a></li>
+        
+      
+      </ul>
+    </div>
+  </div>
+</nav>
+
+      <div class="container">
+        <div class="blog-post">
+          <h3>
+            <strong><a href="../../project/project2/">SDS 348: Project 2</a></strong>
+          </h3>
+        </div>
+ 
+<div class="blog-title">
+          <h4>
+         January 1, 0001 
+            &nbsp;&nbsp;
+            
+          </h4>
+        </div>
+
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="blogpost">
+              
+
+
+<div id="introduction" class="section level3">
+<h3>Introduction</h3>
+<p>The dataset I decided to work with for this project is called, “Did the Author Walk the Dogs Today?”. This file contains daily pedometer data for an unknown author with 7 variables and 223 observations. There are 3 categorical variables and 4 numeric variables to work with. The variables are ‘StepCount’ (number of steps taken in the day), ‘Kcal’ (calories burned), ‘Miles’, ‘Weather’ (cold,rain, or shine), ‘Day’ (day of the week), ‘Walk’ (were the dogs walked?), and ‘Steps’ (steps in units of 1,000). I decided to remove the ‘Steps’ variable, since it reflected the same data as the ‘StepCount’ variable, but in a different unit. The ‘Walk’ variable is a binary variable where 1=yes, the dogs were walked or 0=no, the dogs were not walked.</p>
+<pre class="r"><code>library(tidyverse)
+dogwalk &lt;- read.csv(&quot;WalkTheDogs.csv&quot;)
+dogwalk &lt;- dogwalk %&gt;% select(-Steps)
+glimpse(dogwalk)</code></pre>
+<pre><code>## Rows: 223
+## Columns: 6
+## $ StepCount &lt;int&gt; 2615, 3323, 2721, 2454, 5528, 3257, 4988, 4497, 4567, 2569,…
+## $ Kcal      &lt;int&gt; 8, 12, 13, 12, 152, 17, 65, 133, 35, 19, 273, 353, 140, 4, …
+## $ Miles     &lt;dbl&gt; 1.4, 1.8, 1.4, 1.3, 3.1, 1.8, 2.7, 2.4, 2.6, 1.3, 5.1, 6.3,…
+## $ Weather   &lt;fct&gt; shine, shine, shine, shine, cold, shine, shine, cold, shine…
+## $ Day       &lt;fct&gt; F, S, U, M, T, W, R, F, S, U, M, T, W, R, F, S, U, M, T, W,…
+## $ Walk      &lt;int&gt; 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,…</code></pre>
+</div>
+<div id="manova-test" class="section level3">
+<h3>MANOVA Test</h3>
+<p>The MANOVA test performed on my data revealed that for each response variable, the means are not equal (rejected the null hypothesis, p-value=0.006585). The univariate ANOVAs showed that all response variables (‘StepCount’, Kcal’, and ‘Miles’) differ by day (p-value is less than 0.05). Three post-hoc t-tests were performed to determine which groups differed. Counting up the number of p-values produced, I have performed roughly 67 hypothesis tests, therefore the probability that I have made at least one type I error is roughly 96.78% (0.9678) and the significance level I should now be working with is approximately 0.00075.</p>
+<p>The MANOVA test comes along with many assumptions, such as random/independent observations, multivariate normality of DV’s, homogeneity of within-group covariance matrices, linear relationship among DV’s, no extreme univariate or multivariate outliers, and no multicollinearity. With 223 observations total, there are likely to be some outliers, so that assumption possibly failed. Not only that, but I proved that the multivariate normality of Dv’s assumption failed, shown in the last code. Four out of the seven days of the week do not have a normal distribution. Since these assumptions were likely not met with the data, the results from the MANOVA test must be taken with caution.</p>
+<pre class="r"><code>library(tidyverse)
+# Maova test
+man1 &lt;- manova(cbind(StepCount, Kcal, Miles) ~ Day, data = dogwalk)
+summary(man1)</code></pre>
+<pre><code>##            Df  Pillai approx F num Df den Df   Pr(&gt;F)   
+## Day         6 0.16122   2.0446     18    648 0.006585 **
+## Residuals 216                                           
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code># Full ANOVA
+summary.aov(man1)</code></pre>
+<pre><code>##  Response StepCount :
+##              Df     Sum Sq  Mean Sq F value   Pr(&gt;F)   
+## Day           6  161476692 26912782  3.4499 0.002829 **
+## Residuals   216 1685033495  7801081                    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+##  Response Kcal :
+##              Df  Sum Sq Mean Sq F value   Pr(&gt;F)   
+## Day           6  294681   49113  3.6608 0.001753 **
+## Residuals   216 2897856   13416                    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+##  Response Miles :
+##              Df Sum Sq Mean Sq F value   Pr(&gt;F)   
+## Day           6  51.21  8.5342  3.3802 0.003312 **
+## Residuals   216 545.34  2.5247                    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code># post hoc t-tests
+pairwise.t.test(dogwalk$StepCount, dogwalk$Day, p.adj = &quot;none&quot;)</code></pre>
+<pre><code>## 
+##  Pairwise comparisons using t tests with pooled SD 
+## 
+## data:  dogwalk$StepCount and dogwalk$Day 
+## 
+##   F       M       R       S       T       U      
+## M 0.84102 -       -       -       -       -      
+## R 0.87361 0.96155 -       -       -       -      
+## S 0.08871 0.06483 0.06082 -       -       -      
+## T 0.62407 0.78315 0.73692 0.02929 -       -      
+## U 0.00162 0.00117 0.00090 0.11134 0.00034 -      
+## W 0.75765 0.61874 0.63938 0.16811 0.42826 0.00446
+## 
+## P value adjustment method: none</code></pre>
+<pre class="r"><code>pairwise.t.test(dogwalk$Kcal, dogwalk$Day, p.adj = &quot;none&quot;)</code></pre>
+<pre><code>## 
+##  Pairwise comparisons using t tests with pooled SD 
+## 
+## data:  dogwalk$Kcal and dogwalk$Day 
+## 
+##   F      M      R      S      T      U     
+## M 0.9167 -      -      -      -      -     
+## R 0.7687 0.8580 -      -      -      -     
+## S 0.0164 0.0153 0.0067 -      -      -     
+## T 0.7050 0.7929 0.9286 0.0058 -      -     
+## U 0.0047 0.0045 0.0018 0.5628 0.0016 -     
+## W 0.9261 0.8465 0.7001 0.0220 0.6400 0.0065
+## 
+## P value adjustment method: none</code></pre>
+<pre class="r"><code>pairwise.t.test(dogwalk$Miles, dogwalk$Day, p.adj = &quot;none&quot;)</code></pre>
+<pre><code>## 
+##  Pairwise comparisons using t tests with pooled SD 
+## 
+## data:  dogwalk$Miles and dogwalk$Day 
+## 
+##   F       M       R       S       T       U      
+## M 0.84512 -       -       -       -       -      
+## R 0.86474 0.97445 -       -       -       -      
+## S 0.09991 0.07407 0.06742 -       -       -      
+## T 0.61530 0.76994 0.73590 0.03269 -       -      
+## U 0.00174 0.00128 0.00093 0.10394 0.00035 -      
+## W 0.73047 0.59806 0.60590 0.19866 0.40086 0.00527
+## 
+## P value adjustment method: none</code></pre>
+<pre class="r"><code># type I error
+1 - 0.95^67</code></pre>
+<pre><code>## [1] 0.9678277</code></pre>
+<pre class="r"><code># Bonferroni adjusted significance level
+0.05/67</code></pre>
+<pre><code>## [1] 0.0007462687</code></pre>
+<pre class="r"><code># Test multivariate normality for each group (null: normality
+# met)
+library(rstatix)
+group &lt;- dogwalk$Day
+DVs &lt;- dogwalk %&gt;% select(StepCount, Kcal, Miles)
+sapply(split(DVs, group), mshapiro_test)</code></pre>
+<pre><code>##           F         M          R         S            T            U           
+## statistic 0.9481574 0.9359031  0.9855373 0.8295706    0.7490207    0.6870634   
+## p.value   0.1175309 0.07834214 0.9227208 8.198998e-05 5.138442e-06 1.880185e-06
+##           W          
+## statistic 0.4733603  
+## p.value   1.34175e-09</code></pre>
+</div>
+<div id="randomization-test" class="section level3">
+<h3>Randomization Test</h3>
+<p>For my randomization test, I decided to compare the mean differences in ‘StepCount’ between the rain and shine weather conditions. In order to do this, I started by creating a new data frame that dropped the extra ‘cold’ variable from the weather column. The null hypothesis for this test was that the mean number of steps is the same for both the rain and shine weather conditions, while the alternative hypothesis was that the mean number of steps is different for the rain and shine weather conditions. It appeared that the rain and shine conditions differed by roughly 525 steps. After performing the test, I received a p-value of 0.3348, which leads me to fail to reject the null hypothesis. The Welch Two Sample t-test returned a p-value of 0.3406, which further lead me to the same conclusion of failing to reject the null hypothesis. The mean number of steps is the same (not significantly different) for both the rain and shine weather conditions.</p>
+<pre class="r"><code>library(dplyr)
+# subset rain + shine
+doggie &lt;- dogwalk %&gt;% filter(Weather %in% c(&quot;rain&quot;, &quot;shine&quot;))
+# weight randomization
+doggie %&gt;% group_by(Weather) %&gt;% summarize(means = mean(StepCount)) %&gt;% 
+    summarize(mean_diff = diff(means))</code></pre>
+<pre><code>## # A tibble: 1 x 1
+##   mean_diff
+##       &lt;dbl&gt;
+## 1     -525.</code></pre>
+<pre class="r"><code>rand_dist2 &lt;- vector()
+for (i in 1:5000) {
+    new &lt;- data.frame(StepCount = sample(doggie$StepCount), Weather = doggie$Weather)
+    rand_dist2[i] &lt;- mean(new[new$Weather == &quot;shine&quot;, ]$StepCount) - 
+        mean(new[new$Weather == &quot;rain&quot;, ]$StepCount)
+}
+# p-value: fail to reject Ho
+mean(rand_dist2 &lt; -525.4185 | rand_dist2 &gt; 525.4185)</code></pre>
+<pre><code>## [1] 0.319</code></pre>
+<pre class="r"><code># independent samples t-test (same conclusion, fail to reject
+# null)
+t.test(data = doggie, StepCount ~ Weather)</code></pre>
+<pre><code>## 
+##  Welch Two Sample t-test
+## 
+## data:  StepCount by Weather
+## t = 0.96159, df = 53.157, p-value = 0.3406
+## alternative hypothesis: true difference in means is not equal to 0
+## 95 percent confidence interval:
+##  -570.4585 1621.2955
+## sample estimates:
+##  mean in group rain mean in group shine 
+##            6631.057            6105.639</code></pre>
+<pre class="r"><code># null plot
+ggplot(doggie, aes(StepCount, fill = Weather)) + geom_histogram(bins = 6.5) + 
+    facet_wrap(~Weather, ncol = 2) + theme(legend.position = &quot;none&quot;)</code></pre>
+<p><img src="../../project/project2_files/figure-html/unnamed-chunk-3-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code># histogram
+{
+    hist(rand_dist2, main = &quot;&quot;, ylab = &quot;&quot;)
+    abline(v = c(525.4185, -525.4185), col = &quot;red&quot;)
+}</code></pre>
+<p><img src="../../project/project2_files/figure-html/unnamed-chunk-3-2.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="linear-regression-model" class="section level3">
+<h3>Linear Regression Model</h3>
+<p>I chose to perform a linear regression using the mean centered ‘StepCount’ variable and ‘Weather’ variable to predict mean centered ‘Kcal’. The mean/predicted kCals on a cold day taking 0 steps is about 13.69. For every 1-unit increase in ‘StepCount’, predicted kCal goes up by 0.038. A rainy day with zero steps have a predicted Kcal that is 3.184 lower than a cold day with zero steps, whereas a sunny day with zero steps has a predicted Kcal 24.73 lower than a cold day with zero steps. From the r-squared value, I was able to determine that 83% of variability in Kcal is explained from the model.</p>
+<p>When it comes to assumptions, I was able to create a create a visual to check for homoskedsaticity. From the plot, fanning was present, indicating that our model failed that assumption. Next, a Shapiro Shapiro-Wilk normality test was conducted to check for normaility. The null hypothesis for this test states that the true distribution is normal. The p-value from this test was 3.008e-06, meaning that the null hypothesis was rejected, and this model failed the normaility assumption as well.</p>
+<p>After the regression is redone using heteroskedasticity robust standard errors, the t-statistics become larger as the standard error becomes smaller, therefore leading to smaller p-values that we are more likely to reject the null hypothesis with, just as we did.</p>
+<pre class="r"><code># Mean center numeric variables
+library(tidyverse)
+Walk2 &lt;- dogwalk %&gt;% mutate(StepCount_c = dogwalk$StepCount - 
+    mean(dogwalk$StepCount)) %&gt;% mutate(Kcal_c = dogwalk$Kcal - 
+    mean(dogwalk$Kcal))
+# Linear regression model
+fitty &lt;- lm(Kcal_c ~ StepCount_c + Weather, data = Walk2)
+summary(fitty)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = Kcal_c ~ StepCount_c + Weather, data = Walk2)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -187.242  -24.925    2.215   26.779  194.246 
+## 
+## Coefficients:
+##                Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)   13.694624   6.077200   2.253  0.02522 *  
+## StepCount_c    0.038152   0.001185  32.200  &lt; 2e-16 ***
+## Weatherrain   -3.184215  10.510769  -0.303  0.76222    
+## Weathershine -24.726501   7.648525  -3.233  0.00141 ** 
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 49.74 on 219 degrees of freedom
+## Multiple R-squared:  0.8303, Adjusted R-squared:  0.828 
+## F-statistic: 357.2 on 3 and 219 DF,  p-value: &lt; 2.2e-16</code></pre>
+<pre class="r"><code># Plot
+ggplot(Walk2, aes(StepCount_c, Kcal_c, color = Weather)) + geom_smooth(method = &quot;lm&quot;) + 
+    geom_point()</code></pre>
+<p><img src="../../project/project2_files/figure-html/unnamed-chunk-4-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code># Proportion of variation in Y explained by X
+summary(fitty)$r.sq</code></pre>
+<pre><code>## [1] 0.8303095</code></pre>
+<pre class="r"><code># Checking linearity, homoskedsaticity (fail, shows fanning)
+resids &lt;- fitty$residuals
+fitvals &lt;- fitty$fitted.values
+ggplot() + geom_point(aes(fitvals, resids)) + geom_hline(yintercept = 0, 
+    color = &quot;red&quot;)</code></pre>
+<p><img src="../../project/project2_files/figure-html/unnamed-chunk-4-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code># Checking normality (Ho: true distribution is normal)(fail)
+shapiro.test(resids)</code></pre>
+<pre><code>## 
+##  Shapiro-Wilk normality test
+## 
+## data:  resids
+## W = 0.95689, p-value = 3.008e-06</code></pre>
+<pre class="r"><code># Robust SEs
+coeftest(fitty, vcov = vcovHC(fitty))[, 1:2]</code></pre>
+<pre><code>##                  Estimate  Std. Error
+## (Intercept)   13.69462406 4.336180581
+## StepCount_c    0.03815235 0.001880803
+## Weatherrain   -3.18421542 8.366058475
+## Weathershine -24.72650105 6.213003290</code></pre>
+</div>
+<div id="bootstrapped-standard-errors" class="section level3">
+<h3>Bootstrapped Standard Errors</h3>
+<p>The bootstrap standard errors by resampling residuals appears to look extremely similar to the original standard errors, but slightly smaller. The robust standard errors are the smallest, followed by the bootstrappped standard errors, then the original standard errors. As the standard errors become smaller and smaller, so does the p-value, leading me to continually reject the null hypothesis.</p>
+<pre class="r"><code># Bootstrap SE of resampling residuals
+modelfit &lt;- lm(Kcal_c ~ StepCount_c + Weather, data = Walk2)
+resids &lt;- modelfit$residuals
+fitted &lt;- modelfit$fitted.values
+resid_resamp &lt;- replicate(5000, {
+    new_resids &lt;- sample(resids, replace = TRUE)
+    Walk2$new_Kcal &lt;- fitted + new_resids
+    modelfit &lt;- lm(new_Kcal ~ StepCount_c + Weather, data = Walk2)
+    coef(modelfit)
+})
+# Bootstrapped SEs (resampling residuals)
+resid_resamp %&gt;% t %&gt;% as.data.frame %&gt;% summarize_all(sd)</code></pre>
+<pre><code>##   (Intercept) StepCount_c Weatherrain Weathershine
+## 1    6.091714 0.001176098    10.51847     7.626362</code></pre>
+</div>
+<div id="logisic-regression-model-predicting-walk-from-stepcount-kcal" class="section level3">
+<h3>Logisic Regression Model (predicting Walk from StepCount + Kcal)</h3>
+<p>For the logistic regression model, I decided to try and use the ‘StepCount’ and ‘Kcal’ variables to predict if the dog was taken for a walk or not (‘Walk’ variable). The model shows that an increase in steps leads to a decrease in the probability that the dog was walked that day, whereas an increase in Kcals leads to an increase probability that the dog was walked for the day. For every one unit increase in step count, the log odds change by -0.0004 (odds change by a factor of 0.9996), while the log odds change by 0.0167 for every one unit increase in Kcal (odds change by a factor of 1.017).</p>
+<p>This model produced an accuracy value of 0.72, sensitivity value of 0.15, specificity value of 0.97, precision value of 0.67, and AUC value of 0.76. The model is extremely good at detecting the days the author did not take the dog on the walk (specificity), but is poor at detecting the days where the dog was taken on a walk (sensitivity). This AUC value would fall under the fair category with room for improvement, likely from improving the sensitivity value.</p>
+<p>The ROC curve generated plots the true positive rate (sensitivity) against the false positive rate (specificity). If the model was predicting things perfectly, the true positive rate would be 1, while the false positive rate would be 0. Ideally, we want the area under the curve to be as large as possible. Using the ‘calc_auc’ function, I determined an AUC value of 0.756 for the ROC curve, again falling under the fair category.</p>
+<pre class="r"><code># Logistic Regression Walk~StepCount+Kcal
+dogs &lt;- glm(Walk ~ StepCount + Kcal, data = dogwalk, family = &quot;binomial&quot;)
+coeftest(dogs)</code></pre>
+<pre><code>## 
+## z test of coefficients:
+## 
+##                Estimate  Std. Error z value  Pr(&gt;|z|)    
+## (Intercept) -0.60851784  0.46130352 -1.3191   0.18713    
+## StepCount   -0.00044395  0.00015544 -2.8560   0.00429 ** 
+## Kcal         0.01655234  0.00390172  4.2423 2.212e-05 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code># Exponated coefficients
+exp(coef(dogs))</code></pre>
+<pre><code>## (Intercept)   StepCount        Kcal 
+##   0.5441568   0.9995561   1.0166901</code></pre>
+<pre class="r"><code># Confusion matrix (accuracy, sensitivity, specificity)
+probs &lt;- predict(dogs, type = &quot;link&quot;)
+table(predict = as.numeric(probs &gt; 0.5), truth = dogwalk$Walk) %&gt;% 
+    addmargins</code></pre>
+<pre><code>##        truth
+## predict   0   1 Sum
+##     0   150  58 208
+##     1     5  10  15
+##     Sum 155  68 223</code></pre>
+<pre class="r"><code># Classification Diagnostics (AUC)
+class_diag(probs, dogwalk$Walk)</code></pre>
+<pre><code>##         acc      sens      spec       ppv       auc
+## 1 0.7174888 0.1470588 0.9677419 0.6666667 0.7562619</code></pre>
+<pre class="r"><code># Density plot
+dogwalk %&gt;% mutate(y = as.factor(Walk)) %&gt;% ggplot(aes(probs, 
+    fill = y)) + geom_density(alpha = 0.4)</code></pre>
+<p><img src="../../project/project2_files/figure-html/unnamed-chunk-6-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code># ROC curve
+library(plotROC)
+ROCplot &lt;- ggplot(dogwalk) + geom_roc(aes(d = Walk, m = probs), 
+    n.cuts = 0)
+ROCplot</code></pre>
+<p><img src="../../project/project2_files/figure-html/unnamed-chunk-6-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code># AUC
+calc_auc(ROCplot)</code></pre>
+<pre><code>##   PANEL group       AUC
+## 1     1    -1 0.7562619</code></pre>
+</div>
+<div id="logisic-regression-model-predicting-walk-from-all-variables" class="section level3">
+<h3>Logisic Regression Model (predicting Walk from all variables)</h3>
+<p>After fitting the response binary variable (‘Walk’) to all of the variables in the data set, an AUC value of about 0.77 was computed. From our AUC rules, this value falls under the category of fair. Along with this, I was able to determine an accuracy of 0.73, sensitivity of 0.32, specificity of 0.9, and precision of 0.59. From these values, it’s apparent that the model is better at detecting days where a walk was not taken (true negatives), and is adequate overall at correctly classifying walks vs no walks (accuracy). It’s poor at detecting when walks were taken (sensitivity). When predicting out of sample (10-fold CV), the AUC value remains around 0.77 (AUC value falls 0.00448 points above). The out of sample accuracy is 0.73, the sensitivity is 0.31, the specificity is 0.9, and the precision is 0.55. The biggest difference between the two diagnostics is that precision decreased by 0.04 in the out of sample data. There are no signs of over fitting, as the AUC did not greatly decrease when predicting out of sample.</p>
+<p>After performing LASSO on the original logistic regression model (Walk~(.)), it was determined that the only variable retained was ‘Kcal’. Out of all the variables, ‘Kcal’ was determined to be the most important predictor of whether the dog was walked or not. Another 10-fold cross validation was performed, but this time it only used the variable ‘Kcal’. An out of sample AUC value of approximately 0.75 was determined from this process, reaching 0.02 above both the AUC’s computed above. LASSO is intended to enhance prediction accuracy and reduce over fitting, and this is shown through the improved AUC value.</p>
+<pre class="r"><code># Logistic regression Model
+walkfit &lt;- glm(Walk ~ (.), data = dogwalk, family = &quot;binomial&quot;)
+# Predicted probabilities
+probwalk &lt;- predict(walkfit, type = &quot;response&quot;)
+# Classification diagnostics
+class_diag(probwalk, dogwalk$Walk)</code></pre>
+<pre><code>##         acc      sens      spec       ppv       auc
+## 1 0.7264574 0.3235294 0.9032258 0.5945946 0.7710626</code></pre>
+<pre class="r"><code># 10-fold cross validation with Walk~(.) model
+set.seed(1234)
+k = 10
+data &lt;- dogwalk[sample(nrow(dogwalk)), ]
+folds &lt;- cut(seq(1:nrow(dogwalk)), breaks = k, labels = F)
+diags &lt;- NULL
+for (i in 1:k) {
+    train &lt;- data[folds != i, ]
+    test &lt;- data[folds == i, ]
+    truth &lt;- test$Walk
+    fitdog &lt;- glm(Walk ~ (.), data = dogwalk, family = &quot;binomial&quot;)
+    probs &lt;- predict(fitdog, newdata = test, type = &quot;response&quot;)
+    diags &lt;- rbind(diags, class_diag(probs, truth))
+}
+# Classification Diagnostics
+summarize_all(diags, mean)</code></pre>
+<pre><code>##         acc      sens      spec       ppv       auc
+## 1 0.7264822 0.3110714 0.9045311 0.5483333 0.7754854</code></pre>
+<pre class="r"><code># install.packages(&#39;glmnet&#39;)
+library(glmnet)
+set.seed(1234)
+# Lasso
+y &lt;- as.matrix(dogwalk$Walk)
+x &lt;- model.matrix(Walk ~ ., data = dogwalk)
+cv &lt;- cv.glmnet(x, y, family = &quot;binomial&quot;)
+lassowalk &lt;- glmnet(x, y, family = &quot;binomial&quot;, lambda = cv$lambda.1se)
+coef(lassowalk)</code></pre>
+<pre><code>## 13 x 1 sparse Matrix of class &quot;dgCMatrix&quot;
+##                        s0
+## (Intercept)  -1.139288115
+## (Intercept)   .          
+## StepCount     .          
+## Kcal          0.002227394
+## Miles         .          
+## Weatherrain   .          
+## Weathershine  .          
+## DayM          .          
+## DayR          .          
+## DayS          .          
+## DayT          .          
+## DayU          .          
+## DayW          .</code></pre>
+<pre class="r"><code># Lasso model
+lassodog &lt;- glm(Walk ~ Kcal, data = dogwalk, family = &quot;binomial&quot;)
+# Predicted probabilities
+predictlassowalk &lt;- predict(lassodog, type = &quot;response&quot;)
+# Classification diagnostics
+class_diag(predictlassowalk, dogwalk$Walk)</code></pre>
+<pre><code>##        acc      sens      spec       ppv       auc
+## 1 0.690583 0.2058824 0.9032258 0.4827586 0.7537476</code></pre>
+</div>
+
+            
+        <hr>         <div class="related-posts">
+                <h5>Related Posts</h5>
+                
+              </div> 
+            </div>
+          </div>
+
+   <hr>  <div class="disqus">
+  <div id="disqus_thread"></div>
+  <script type="text/javascript">
+
+    (function() {
+      
+      
+      if (window.location.hostname == "localhost")
+        return;
+
+      var disqus_shortname = '';
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  <a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div> 
+        </div>
+      </div>
+    </div>
+
+    
+    <footer>
+  <div id="footer">
+    <div class="container">
+      <p class="text-muted">&copy; All rights reserved. Powered by <a href="https://gohugo.io/">Hugo</a> and
+      <a href="http://www.github.com/nurlansu/hugo-sustain/">sustain</a> with ♥</p>
+    </div>
+  </div>
+</footer>
+<div class="footer"></div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="../../js/docs.min.js"></script>
+<script src="../../js/main.js"></script>
+
+<script src="../../js/ie10-viewport-bug-workaround.js"></script>
+
+
+    
+  </body>
+</html>

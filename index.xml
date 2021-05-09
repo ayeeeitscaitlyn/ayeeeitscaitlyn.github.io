@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Caitlyn Warren</title>
+    <link>/</link>
+    <description>Recent content on Caitlyn Warren</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-US</language>
+    <lastBuildDate>Sat, 08 May 2021 00:00:00 +0000</lastBuildDate><atom:link href="/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>My post</title>
+      <link>/post/2021/05/08/my-post/</link>
+      <pubDate>Sat, 08 May 2021 00:00:00 +0000</pubDate>
+      
+      <guid>/post/2021/05/08/my-post/</guid>
+      <description> Hello! Here is my post. summary(iris) ## Sepal.Length Sepal.Width Petal.Length Petal.Width ## Min. :4.300 Min. :2.000 Min. :1.000 Min. :0.100 ## 1st Qu.:5.100 1st Qu.:2.800 1st Qu.:1.600 1st Qu.:0.300 ## Median :5.800 Median :3.000 Median :4.350 Median :1.300 ## Mean :5.843 Mean :3.057 Mean :3.758 Mean :1.199 ## 3rd Qu.:6.400 3rd Qu.:3.300 3rd Qu.:5.100 3rd Qu.:1.800 ## Max. :7.900 Max. :4.400 Max. :6.900 Max. :2.500 ## Species ## setosa :50 ## versicolor:50 ## virginica :50 ## ## ##   </description>
+    </item>
+    
+    <item>
+      <title>Projects</title>
+      <link>/projects/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/projects/</guid>
+      <description> Check out some of my coding projects below:
+ Wrangling &amp;amp; Exploratory Data Analysis
+ Modeling, Inference, Prediction
+  -- </description>
+    </item>
+    
+    <item>
+      <title>Resume</title>
+      <link>/resume/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/resume/</guid>
+      <description>    </description>
+    </item>
+    
+    <item>
+      <title>SDS 348: Project 1</title>
+      <link>/project/project1/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/project/project1/</guid>
+      <description>Introduction As I began this project, I tried to brainstorm possible associations between variables I found interesting. I was drawn towards datasets that included information about health, pets, or traveling, but had a hard time finding a common variable between the files I found within those topics. Feeling defeated, I tried to brainstorm some of my favorite activities. One of my favorite things to do on a sunny day in Austin is visit a brewery with friends for a drink.</description>
+    </item>
+    
+    <item>
+      <title>SDS 348: Project 2</title>
+      <link>/project/project2/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/project/project2/</guid>
+      <description>Introduction The dataset I decided to work with for this project is called, “Did the Author Walk the Dogs Today?”. This file contains daily pedometer data for an unknown author with 7 variables and 223 observations. There are 3 categorical variables and 4 numeric variables to work with. The variables are ‘StepCount’ (number of steps taken in the day), ‘Kcal’ (calories burned), ‘Miles’, ‘Weather’ (cold,rain, or shine), ‘Day’ (day of the week), ‘Walk’ (were the dogs walked?</description>
+    </item>
+    
+  </channel>
+</rss>

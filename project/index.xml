@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Projects on Caitlyn Warren</title>
+    <link>/project/</link>
+    <description>Recent content in Projects on Caitlyn Warren</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-US</language><atom:link href="/project/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>SDS 348: Project 1</title>
+      <link>/project/project1/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/project/project1/</guid>
+      <description>Introduction As I began this project, I tried to brainstorm possible associations between variables I found interesting. I was drawn towards datasets that included information about health, pets, or traveling, but had a hard time finding a common variable between the files I found within those topics. Feeling defeated, I tried to brainstorm some of my favorite activities. One of my favorite things to do on a sunny day in Austin is visit a brewery with friends for a drink.</description>
+    </item>
+    
+    <item>
+      <title>SDS 348: Project 2</title>
+      <link>/project/project2/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/project/project2/</guid>
+      <description>Introduction The dataset I decided to work with for this project is called, “Did the Author Walk the Dogs Today?”. This file contains daily pedometer data for an unknown author with 7 variables and 223 observations. There are 3 categorical variables and 4 numeric variables to work with. The variables are ‘StepCount’ (number of steps taken in the day), ‘Kcal’ (calories burned), ‘Miles’, ‘Weather’ (cold,rain, or shine), ‘Day’ (day of the week), ‘Walk’ (were the dogs walked?</description>
+    </item>
+    
+  </channel>
+</rss>

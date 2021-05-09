@@ -1,0 +1,222 @@
+---
+title: "SDS 348: Project 2"
+author: "Caitlyn Warren (cew2999)"
+date: "5/1/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE, fig.align = "center", warning = F, message = F,
+tidy=TRUE, tidy.opts=list(width.cutoff=60), R.options=list(max.print=100))
+
+class_diag <- function(probs,truth){ 
+  #CONFUSION MATRIX: CALCULATE ACCURACY, TPR, TNR, PPV 
+  if(is.character(truth)==TRUE) truth<-as.factor(truth) 
+  if(is.numeric(truth)==FALSE & is.logical(truth)==FALSE) truth<-as.numeric(truth)-1 
+  tab<-table(factor(probs>.5,levels=c("FALSE","TRUE")),factor(truth, levels=c(0,1))) 
+  acc=sum(diag(tab))/sum(tab) 
+  sens=tab[2,2]/colSums(tab)[2] 
+  spec=tab[1,1]/colSums(tab)[1] 
+  ppv=tab[2,2]/rowSums(tab)[2] 
+  
+#CALCULATE EXACT AUC 
+  ord<-order(probs, decreasing=TRUE) 
+  probs <- probs[ord]; truth <- truth[ord] 
+  TPR=cumsum(truth)/max(1,sum(truth))  
+  FPR=cumsum(!truth)/max(1,sum(!truth)) 
+  dup <-c(probs[-1]>=probs[-length(probs)], FALSE) 
+  TPR <-c(0,TPR[!dup],1); FPR<-c(0,FPR[!dup],1) 
+  n <- length(TPR) 
+  auc <- sum( ((TPR[-1]+TPR[-n])/2) * (FPR[-1]-FPR[-n])) 
+  data.frame(acc,sens,spec,ppv,auc) 
+}
+library(dplyr)
+library(tidyverse)
+library(lmtest)
+library(sandwich)
+library(plotROC)
+library(glmnet) 
+```
+### Introduction 
+
+The dataset I decided to work with for this project is called, "Did the Author Walk the Dogs Today?". This file contains daily pedometer data for an unknown author with 7 variables and 223 observations. There are 3 categorical variables and 4 numeric variables to work with. The variables are 'StepCount' (number of steps taken in the day), 'Kcal' (calories burned), 'Miles', 'Weather' (cold,rain, or shine), 'Day' (day of the week), 'Walk' (were the dogs walked?), and 'Steps' (steps in units of 1,000). I decided to remove the 'Steps' variable, since it reflected the same data as the 'StepCount' variable, but in a different unit. The 'Walk' variable is a binary variable where 1=yes, the dogs were walked or 0=no, the dogs were not walked. 
+
+```{r}
+library(tidyverse)
+dogwalk <- read.csv("WalkTheDogs.csv")
+dogwalk %>% select(-Steps) ->dogwalk
+glimpse(dogwalk)
+```
+### MANOVA Test 
+
+The MANOVA test performed on my data revealed that for each response variable, the means are not equal (rejected the null hypothesis, p-value=0.006585). The univariate ANOVAs showed that all response variables ('StepCount', Kcal', and 'Miles') differ by day (p-value is less than 0.05). Three post-hoc t-tests were performed to determine which groups differed. Counting up the number of p-values produced, I have performed roughly 67 hypothesis tests, therefore the probability that I have made at least one type I error is roughly 96.78% (0.9678) and the significance level I should now be working with is approximately 0.00075.
+
+The MANOVA test comes along with many assumptions, such as random/independent observations, multivariate normality of DV's, homogeneity of within-group covariance matrices, linear relationship among DV's, no extreme univariate or multivariate outliers, and no multicollinearity. With 223 observations total, there are likely to be some outliers, so that assumption possibly failed. Not only that, but I proved that the multivariate normality of Dv's assumption failed, shown in the last code. Four out of the seven days of the week do not have a normal distribution. Since these assumptions were likely not met with the data, the results from the MANOVA test must be taken with caution. 
+
+```{r}
+library(tidyverse)
+#Maova test
+man1<-manova(cbind(StepCount, Kcal, Miles)~Day, data=dogwalk)
+summary(man1)
+#Full ANOVA
+summary.aov(man1) 
+#post hoc t-tests
+pairwise.t.test(dogwalk$StepCount,dogwalk$Day, p.adj = "none")
+pairwise.t.test(dogwalk$Kcal,dogwalk$Day, p.adj = "none")
+pairwise.t.test(dogwalk$Miles,dogwalk$Day, p.adj = "none")
+#type I error
+1-0.95^67
+#Bonferroni adjusted significance level 
+0.05/67
+#Test multivariate normality for each group (null: normality met)
+library(rstatix)
+group <- dogwalk$Day
+DVs <- dogwalk %>% select(StepCount,Kcal,Miles)
+sapply(split(DVs,group), mshapiro_test)
+```
+
+### Randomization Test 
+
+For my randomization test, I decided to compare the mean differences in 'StepCount' between the rain and shine weather conditions. In order to do this, I started by creating a new data frame that dropped the extra 'cold' variable from the weather column. The null hypothesis for this test was that the mean number of steps is the same for both the rain and shine weather conditions, while the alternative hypothesis was that the mean number of steps is different for the rain and shine weather conditions. It appeared that the rain and shine conditions differed by roughly 525 steps. After performing the test, I received a p-value of 0.3348, which leads me to fail to reject the null hypothesis. The Welch Two Sample t-test returned a p-value of 0.3406, which further lead me to the same conclusion of failing to reject the null hypothesis. The mean number of steps is the same (not significantly different) for both the rain and shine weather conditions. 
+
+```{r}
+library(dplyr)
+#subset rain + shine
+dogwalk %>% filter(Weather %in% c("rain", "shine")) -> doggie
+#weight randomization
+doggie%>%group_by(Weather)%>%summarize(means=mean(StepCount))%>%summarize(`mean_diff`=diff(means))
+rand_dist2<-vector()
+for(i in 1:5000){new<-data.frame(StepCount=sample(doggie$StepCount),Weather=doggie$Weather)
+rand_dist2[i]<-mean(new[new$Weather=="shine",]$StepCount)-mean(new[new$Weather=="rain",]$StepCount)}
+#p-value: fail to reject Ho
+mean(rand_dist2< -525.4185 | rand_dist2> 525.4185)
+#independent samples t-test (same conclusion, fail to reject null)
+t.test(data=doggie,StepCount~Weather)
+#null plot
+ggplot(doggie,aes(StepCount,fill=Weather))+geom_histogram(bins=6.5)+
+  facet_wrap(~Weather,ncol=2)+theme(legend.position="none")
+#histogram
+{hist(rand_dist2,main="",ylab=""); abline(v = c(525.4185,-525.4185),col="red")}
+```
+
+### Linear Regression Model 
+
+I chose to perform a linear regression using the mean centered 'StepCount' variable and 'Weather' variable to predict  mean centered 'Kcal'. The mean/predicted kCals on a cold day taking 0 steps is about 13.69. For every 1-unit increase in 'StepCount', predicted kCal goes up by 0.038. A rainy day with zero steps have a predicted Kcal that is 3.184 lower than a cold day with zero steps, whereas a sunny day with zero steps has a predicted Kcal 24.73 lower than a cold day with zero steps. From the r-squared value, I was able to determine that 83% of variability in Kcal is explained from the model. 
+
+When it comes to assumptions, I was able to create a create a visual to check for homoskedsaticity. From the plot, fanning was present, indicating that our model failed that assumption. Next, a Shapiro Shapiro-Wilk normality test was conducted to check for normaility. The null hypothesis for this test states that the true distribution is normal. The p-value from this test was 3.008e-06, meaning that the null hypothesis was rejected, and this model failed the normaility assumption as well.
+
+After the regression is redone  using heteroskedasticity robust standard errors, the t-statistics become larger as the standard error becomes smaller, therefore leading to smaller p-values that we are more likely to reject the null hypothesis with, just as we did. 
+
+```{r}
+#Mean center numeric variables
+library(tidyverse)
+dogwalk %>% mutate(StepCount_c=dogwalk$StepCount-mean(dogwalk$StepCount)) %>% mutate(Kcal_c=dogwalk$Kcal-mean(dogwalk$Kcal)) -> Walk2
+#Linear regression model
+fitty<-lm(Kcal_c~StepCount_c+Weather, data=Walk2)
+summary(fitty)
+#Plot 
+ggplot(Walk2, aes(StepCount_c,Kcal_c, color = Weather)) + geom_smooth(method = "lm") + geom_point()
+#Proportion of variation in Y explained by X
+summary(fitty)$r.sq
+#Checking linearity, homoskedsaticity (fail, shows fanning)
+resids<-fitty$residuals
+fitvals<-fitty$fitted.values
+ggplot()+geom_point(aes(fitvals,resids))+geom_hline(yintercept=0, color='red')
+#Checking normality (Ho: true distribution is normal)(fail)
+shapiro.test(resids) 
+#Robust SEs
+coeftest(fitty, vcov = vcovHC(fitty))[,1:2]
+```
+
+### Bootstrapped Standard Errors 
+
+The bootstrap standard errors by resampling residuals appears to look extremely similar to the original standard errors, but slightly smaller. The robust standard errors are the smallest, followed by the bootstrappped standard errors, then the original standard errors. As the standard errors become smaller and smaller, so does the p-value, leading me to continually reject the null hypothesis. 
+
+```{r}
+#Bootstrap SE of resampling residuals 
+modelfit <- lm(Kcal_c~StepCount_c+Weather, data=Walk2)
+  resids<-modelfit$residuals 
+  fitted<-modelfit$fitted.values
+  resid_resamp<-replicate(5000,{
+    new_resids<-sample(resids,replace=TRUE) 
+    Walk2$new_Kcal<-fitted+new_resids 
+    modelfit<-lm(new_Kcal~StepCount_c+Weather, data=Walk2) 
+    coef(modelfit) 
+})
+#Bootstrapped SEs (resampling residuals)
+resid_resamp%>%t%>%as.data.frame%>%summarize_all(sd)
+```
+
+### Logisic Regression Model (predicting Walk from StepCount + Kcal)
+
+For the logistic regression model, I decided to try and use the 'StepCount' and 'Kcal' variables to predict if the dog was taken for a walk or not ('Walk' variable). The model shows that an increase in steps leads to a decrease in the probability that the dog was walked that day, whereas an increase in Kcals leads to an increase probability that the dog was walked for the day. For every one unit increase in step count, the log odds change by -0.0004 (odds change by a factor of 0.9996), while the log odds change by 0.0167 for every one unit increase in Kcal (odds change by a factor of 1.017). 
+
+This model produced an accuracy value of 0.72, sensitivity value of 0.15, specificity value of 0.97, precision value of 0.67, and AUC value of 0.76. The model is extremely good at detecting the days the author did not take the dog on the walk (specificity), but is poor at detecting the days where the dog was taken on a walk (sensitivity). This AUC value would fall under the fair category with room for improvement, likely from improving the sensitivity value. 
+
+The ROC curve generated plots the true positive rate (sensitivity) against the false positive rate (specificity). If the model was predicting things perfectly, the true positive rate would be 1, while the false positive rate would be 0. Ideally, we want the area under the curve to be as large as possible. Using the 'calc_auc' function, I determined an AUC value of 0.756 for the ROC curve, again falling under the fair category. 
+
+```{r}
+#Logistic Regression Walk~StepCount+Kcal
+dogs <-glm(Walk~StepCount+Kcal,data=dogwalk, family="binomial")
+coeftest(dogs)
+#Exponated coefficients
+exp(coef(dogs))
+#Confusion matrix (accuracy, sensitivity, specificity)
+probs<-predict(dogs,type="link") 
+table(predict=as.numeric(probs>.5),truth=dogwalk$Walk)%>%addmargins
+#Classification Diagnostics (AUC)
+class_diag(probs,dogwalk$Walk)
+#Density plot
+dogwalk %>% mutate(y=as.factor(Walk))%>% ggplot(aes(probs, fill=y))+geom_density(alpha=.4)
+#ROC curve 
+library(plotROC)
+ROCplot<-ggplot(dogwalk)+geom_roc(aes(d=Walk,m=probs), n.cuts=0)
+ROCplot
+#AUC
+calc_auc(ROCplot)
+```
+
+### Logisic Regression Model (predicting Walk from all variables) 
+
+After fitting the response binary variable ('Walk') to all of the variables in the data set, an AUC value of about 0.77 was computed. From our AUC rules, this value falls under the category of fair. Along with this, I was able to determine an accuracy of 0.73, sensitivity of 0.32, specificity of 0.9, and precision of 0.59. From these values, it's apparent that the model is better at detecting days where a walk was not taken (true negatives), and is adequate overall at correctly classifying walks vs no walks (accuracy). It's poor at detecting when walks were taken (sensitivity). When predicting out of sample (10-fold CV), the AUC value remains around 0.77 (AUC value falls 0.00448 points above). The out of sample accuracy is 0.73, the sensitivity is 0.31, the specificity is 0.9, and the precision is 0.55. The biggest difference between the two diagnostics is that precision decreased by 0.04 in the out of sample data. There are no signs of over fitting, as the AUC did not greatly decrease when predicting out of sample.
+
+After performing LASSO on the original logistic regression model (Walk~(.)), it was determined that the only variable retained was 'Kcal'. Out of all the variables, 'Kcal' was determined to be the most important predictor of whether the dog was walked or not. Another 10-fold cross validation was performed, but this time it only used the variable 'Kcal'. An out of sample AUC value of approximately 0.75 was determined from this process, reaching 0.02 above both the AUC's computed above. LASSO is intended to enhance prediction accuracy and reduce over fitting, and this is shown through the improved AUC value. 
+```{r}
+#Logistic regression Model
+walkfit<-glm(Walk~(.),data=dogwalk,family="binomial")
+#Predicted probabilities 
+probwalk<-predict(walkfit,type="response")
+#Classification diagnostics 
+class_diag(probwalk,dogwalk$Walk)
+#10-fold cross validation with Walk~(.) model
+set.seed(1234)
+k=10 
+data<-dogwalk[sample(nrow(dogwalk)),] 
+folds<-cut(seq(1:nrow(dogwalk)),breaks=k,labels=F)
+diags<-NULL
+for(i in 1:k){
+  train<-data[folds!=i,]
+  test<-data[folds==i,]
+  truth<-test$Walk
+  fitdog<-glm(Walk~(.),data=dogwalk,family="binomial")
+  probs<-predict(fitdog,newdata = test,type="response")
+  diags<-rbind(diags,class_diag(probs,truth))
+}
+#Classification Diagnostics
+summarize_all(diags,mean)
+#install.packages("glmnet")
+library(glmnet)
+set.seed(1234)
+#Lasso
+y<-as.matrix(dogwalk$Walk)
+x<-model.matrix(Walk~.,data=dogwalk)
+cv <- cv.glmnet(x,y, family="binomial") 
+lassowalk<-glmnet(x,y,family="binomial",lambda=cv$lambda.1se)
+coef(lassowalk)
+#Lasso model
+lassodog <-glm(Walk~Kcal, data=dogwalk, family="binomial")
+#Predicted probabilities 
+predictlassowalk<-predict(lassodog,type="response")
+#Classification diagnostics
+class_diag(predictlassowalk,dogwalk$Walk)
+```

@@ -1,0 +1,140 @@
+---
+title: "SDS 348: Project 1"
+author: "Caitlyn Warren (cew2999)"
+date: "3/21/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE, fig.align = "center", warning = F, message = F,
+tidy=TRUE, tidy.opts=list(width.cutoff=60), R.options=list(max.print=100))
+```
+
+### Introduction
+As I began this project, I tried to brainstorm possible associations between variables I found interesting. I was drawn towards datasets that included information about health, pets, or traveling, but had a hard time finding a common variable between the files I found within those topics. Feeling defeated, I tried to brainstorm some of my favorite activities. One of my favorite things to do on a sunny day in Austin is visit a brewery with friends for a drink. This exact pastime lead to the inspiration behind my project. 
+
+I scoured the internet for two datasets that provided me with a record of past weather statistics, as well as alcohol consumption in the United States. After some digging, the two datasets I found and have chosen to work with are "2018 US Weather Data" found on Kaggle.com and "1977-2018 USA Alcohol Consumption" found on openICPSR.org. I intend to combine the two through the shared "state" variable. The weather dataset contains the variables, 'state', 'average humidity', 'average temperature', and 'average pressure'. Average humidity, temperature, and pressure are further broken down by season (spring, summer, fall, winter). Humidity is reported as a percent, temperature is in celsius, precipitation is in millimeters, and pressure is reported in hPa. The alcohol consumption dataset contains the variables, 'state', 'year', 'ethanol consumption' (for beer, wine, and liquor), 'number of beers', 'glasses of wine', 'number of liquor shots', and 'number of total drinks'. Consumption of ethanol is reported in gallons, and the other categories are reported as number of drinks based upon the ethanol consumption. The most prominent association I expect from these datasets is an increase in drinking with warmer temperatures across all US states. Low humidity and low precipitation would likely lead to more drinking as well.
+```{r cars}
+library(tidyverse)
+weather <- read_csv("USA_HistoricalWeather_State.csv")
+alcohol <- read_csv("Alcohol_consumption_1977_2018.csv")
+glimpse(weather)
+glimpse(alcohol)
+```
+### Tidying
+While my data was tidy, I decided to make a few changes in order to make further analysis run smoother. First, I used the 'subset' function to narrow down the alcohol dataset to each states alcohol consumption just for the year 2018, since the weather file only contained information for 2018. I also dropped the last 5 rows, as well as the columns containing amount of ethanol consumed, since they contained extra information I wasn't planning on working with. I renamed a few variables within the 'alcohol' dataset as well. From the weather dataset, I dropped the last 4 columns pertaining to the pressure in each season, as I was more interested in the humidity, temperature, and precipitation values per state. By doing this, both datasets now contained 50 observations (each of the 50 states) pertaining to the alcohol consumption and weather conditions in 2018. As a final step, I renamed the datasets with their unique modifications.
+```{r}
+#final alcohol
+alcohol %>% subset(year==2018) %>% slice(-(51:55)) %>% select(-c(3:6)) %>% rename(beer=number_of_beers) %>% rename(wine=number_of_glasses_wine) %>% rename(liquor=number_of_shots_liquor) %>% rename(total_drinks=number_of_drinks_total) ->finalalcohol
+#final weather
+weather %>% select(-c(14:17)) ->finalweather
+```
+### Joining/Merging
+To join the two datasets, I combined them on the common ID variable "state". Both of the files contain all 50 U.S. states in alphabetical order with no duplicates. Since all of the observations in the datasets are the same, with no extras, any of the 'join' functions would produce the same output. Inner join, right join, left join, or a full join return the combined datasets with all their corresponding information. Just to be sure all the information from both datasets was preserved, I decided to use the 'full_join' function. This function takes all of the states in the alcohol dataset and matches them with the data corresponding to the state's specific weather information. The final datatset contains each state in a row with it's alcohol and weather features in the same row. No cases were dropped, since the common ID variables all matched up. If I didn't drop the last few rows in the alcohol dataset (performed above), they likely would have been dropped since they don't match up with anything in the weather file. After performing the full join, the combined dataset was saved as 'proj1'. The final dataset has 50 rows and 18 columns.
+```{r}
+#join datasets
+full_join(finalalcohol, finalweather, by= "state") -> proj1
+glimpse(proj1)
+```
+### Wrangling 
+In order to effectively generate summary statistics, I started off by using the function 'pivot_longer' to combine my 3 weather variables (humidity, temperature, and precipitation) into their own unique column, with the 'season' column pertaining to humidity seasons, 'season2' going along with the temperature seasons, and 'season3' belonging to the seasons in precipitation. This form of my 'proj1' dataset was saved as 'wranglingproj1'. I used both 'proj1' and 'wranglingproj1' in this section. The first thing I attempted to do was observe the maximum, minimum, average, and standard deviation of all the numeric variables in my 'proj1' dataset. From these codes, I found the standard deviations to be most interesting, with 'total_drinks' having the highest standard deviation (most variability) and precipitation amongst all seasons having the least (least variability). Afterwards, I identified which state consumed the most/least least amount of drinks by investigating the 'total_drinks' variable. New Hampshire consumed the most drinks at 996.27, while Utah consumed the least at 288 total drinks. Knowing this, I was eager to look further into the highest temperature variables in these two states and break them down by which season they occurred in. New Hampshire's temperature reached a high of 77˚F in the fall, while Utah's high temperature only reached 67˚F in the fall. I was also eager to look at the 'beer', 'wine', and 'liquor' variables and identify which states drank the most of each. New Hampshire drank the most beer and liquor at 424 units of liquor and 425 units of beer, and Idaho drank the most wine at 240 drinks. Lastly, I analyzed how many states drank more than the U.S. average. 21 out of the 50 states drank more than 525 units of alcohol, which is roughly 42%. 
+```{r}
+#tidy functions on proj1
+proj1 %>% pivot_longer(cols=c(7:10), names_to="season", values_to="humidity") %>% pivot_longer(cols=c(7:10), names_to="season2", values_to="temperature") %>% pivot_longer(cols=c(7:10), names_to="season3", values_to="precipitation") ->wranglingproj1
+glimpse(wranglingproj1)
+#maximum number of all variables
+proj1_max <- proj1 %>% select(-state,-year) %>% summarize_if(is.numeric,max,na.rm=T)
+proj1_max
+#minimum number of all variables
+proj1_min <- proj1 %>% select(-state,-year) %>% summarize_if(is.numeric,min,na.rm=T)
+proj1_min
+#average of all variables
+proj1_means <- proj1 %>% select(-state,-year) %>% summarize_if(is.numeric,mean,na.rm=T)
+proj1_means
+#standard deviation of all variables
+proj1_sd <- proj1 %>% select(-state,-year) %>% summarize_if(is.numeric,sd,na.rm=T)
+proj1_sd
+
+#state that drinks the most
+proj1 %>% select(state,total_drinks) %>% arrange(desc(total_drinks))
+#state that drinks the least
+proj1 %>% select(state,total_drinks) %>% arrange(total_drinks)
+#mutate temperature + New Hampshire's temperature (most drinks)
+wranglingproj1 %>% mutate(temperatureF=(temperature*9/5)+32) %>% filter(state== "New_Hampshire") %>% select(temperatureF, season2) %>% arrange(desc(temperatureF))
+#mutate temperature + Utah's temperature (least drinks)
+wranglingproj1 %>% mutate(temperatureF=(temperature*9/5)+32) %>% filter(state== "Utah") %>% select(temperatureF, season2) %>% arrange(desc(temperatureF))
+
+#state that drinks the most beer
+proj1 %>% select(state, beer) %>% arrange(desc(beer))
+#state that drinks the most wine
+proj1 %>% select(state, wine) %>% arrange(desc(wine))
+#state that drinks the most liquor 
+proj1 %>% select(state, liquor) %>% arrange(desc(liquor))
+#number of states that drink GREATER than the average total # of drinks 
+proj1 %>% filter(total_drinks >= 525) %>% summarize(n_distinct(state))
+```
+To finish off my summary statistics section, I utilized the 'wranglingproj1' dataset to look at the average weather values across the 50 states based upon season. From this, I was able to see that fall had the most humidity at 69%, the highest temperature at 80.5˚F, and the most precipitation at 2 millimeters. As far as the lows, spring had the least precipitation at 1.1 millimeters, the coolest temperature at 50˚F, while summer had the least humidity at 68%. To transition into the visualization section, I computed correlations amongst all the variables in the 'wranglingproj1' dataset. 
+```{r}
+#mean humidity per season (%)
+wranglingproj1 %>% select(-state,-year)%>% group_by(season) %>% summarize(mean(humidity))
+#mean temperature per season (˚F)
+wranglingproj1 %>% select(-state,-year)%>% group_by(season2) %>% mutate(temperatureF=(temperature*9/5)+32) %>% summarize(mean(temperatureF))
+#mean precipitation per season (mm)
+wranglingproj1 %>% select(-state,-year)%>% group_by(season3) %>% summarize(mean(precipitation))
+
+#correlation between drinks + humidity, temperature, and precipitation
+cor2 <- wranglingproj1 %>% select(-state,-year) %>% select_if(is.numeric) %>% cor(use="pair")
+tidycor2 <- cor2 %>% as.data.frame %>% rownames_to_column("var1") %>%
+  pivot_longer(-1,names_to="var2",values_to="correlation")
+tidycor2
+```
+### Visualizing
+A correlation heatmap of 'tidycor2' was generated first. Within this heatmap, the strongest correlation is between 'total_drinks' and 'liquor', likely indicating that states with higher liquor values also have higher total drink values. The next strongest correlation is between 'total_drinks' and 'beer'. The weather variables had weak, even negative correlations with the drinking variables. 
+```{r}
+#correlation heatmap of tidycor2 
+tidycor2%>%ggplot(aes(var1,var2,fill=correlation))+
+geom_tile()+
+scale_fill_gradient2(low="red",mid="white",high="blue")+ geom_text(aes(label=round(correlation,2)),color = "black", size = 4)+ 
+theme(axis.text.x = element_text(angle = 90, hjust=1))+ 
+coord_fixed()
+```
+Since I predicted a relationship between temperature and total number of drinks in the first place, I aimed to create a visualization of these variables. I started off by creating a bar plot to observe the total number of drinks in all 50 states. After getting an idea of which states drank the most and least in 2018, I created a scatter plot of total drinks versus temperature (in fahrenheit), color coded by state. At a glance, it's easy to tell that there is no true relationship between these variables, as the points are spread out all across the graph. This idea is backed up by the correlation coefficient of -0.03 found on the heatmap. The second thing that stands out from this graph is the pink dots on the far left (less drinking) and blue dots on the far right (more drinking), as well as the green dots on the top of the graph (high temperatures). By looking at the legend, we are able to match these dots with the state they come from, such as Louisiana or Maine having high temperatures for example. 
+```{r}
+
+ggplot(proj1, aes(state, fill= state), stat=summary)+ geom_bar(aes(y=total_drinks), stat="summary", fun=mean)+ theme(axis.text.x = element_text(angle=45, hjust=1), legend.position="none") + xlab("States") + ylab("Total Number of Drinks") + ggtitle("U.S. States Total Number of Drinks in 2018")
+
+
+wranglingproj1 %>% mutate(temperatureF=(temperature*9/5)+32) %>% ggplot(aes(total_drinks, temperatureF, color=state))+geom_point() + xlab("Total Number of Drinks") + ylab("Temperature ˚F") + ggtitle("Total Drinks vs. Temperature") + scale_x_continuous(n.breaks=8) + scale_y_continuous(n.breaks=8)
+```
+
+### Dimensionality Reduction
+As a final step to my project, I performed k-means/PAM on my variables.To start off, I processed my data, making sure to scale all of my numeric variables. I chose the number 2 as my number of clusters, just as a placeholder. Afterwards, I used the silhouette method to find the best number of clusters (k) for my data. From the graph generated, k=2 seemed to be the best number of clusters for my dataset, since it maximized the silhouette width. From here, I ran the PAM cluster analysis with two clusters and created two different graphs to better visualize the clusters. While the first graph only plotted the variables 'beer' and 'wine', I was able to tell that the higher drink values were in the second cluster, whereas the lower values were in the first. After this, I used 'ggpairs' to create a correlation matrix between my variables, along with their assigned cluster. The most important thing to note from these graphs was that the correlations between all variables and their clusters was extremely low, never reaching over 0.5/-0.5. This lead me to believe my clusters would have a weak structure. From here, I computed the means from each variable in both clusters and matched them with the most representative medoid. Cluster one had lower values that best resembled New Mexico, whereas cluster two had higher values that best resembled Wisconsin. In order to truly discover how well my clusters fit my data, I computed a unique value for my data's silhouette width and plotted it. According to my results, my average silhouette width is 0.26, which means my clusters are lacking a substantial structure, just as I hypothesized. 
+```{r}
+#process data
+library(cluster)
+library(tidyverse)
+clust_dat<-wranglingproj1%>%select(beer,wine,liquor,total_drinks,humidity,temperature,precipitation)
+pam1 <- clust_dat %>% scale %>% pam(k=2) 
+pam1
+#choose number of clusters + plot 
+library(cluster)
+sil_width<-vector() 
+for(i in 2:10){
+  kms <- kmeans(clust_dat,centers=i) 
+  sil <- silhouette(kms$cluster,dist(clust_dat)) 
+  sil_width[i]<-mean(sil[,3]) 
+}
+ggplot()+geom_line(aes(x=1:10,y=sil_width))+scale_x_continuous(name="k",breaks=1:10)
+#using PAM + visualize clusters
+pamclust<-clust_dat %>% mutate(cluster=as.factor(pam1$clustering))
+pamclust %>% ggplot(aes(beer,wine,liquor,humidity,temperature,precipitation,color=cluster, shape=cluster)) + geom_point(size=2)
+library(GGally) 
+wranglingproj1 %>% mutate(cluster=as.factor(pam1$clustering)) %>% ggpairs(columns = c("beer","wine","liquor","humidity","temperature","precipitation"), aes(color=cluster))
+#summarize clusters (means of each variable)
+pamclust %>% group_by(cluster) %>% summarize_if(is.numeric,mean,na.rm=T)
+#final medoids (most representative of clusters)
+wranglingproj1%>%slice(pam1$id.med)
+#goodness of fit with cluster numbers 
+pam1$silinfo$avg.width
+plot(pam1,which=2)
+```
