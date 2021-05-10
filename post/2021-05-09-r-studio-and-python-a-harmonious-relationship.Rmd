@@ -1,0 +1,41 @@
+---
+title: 'R Studio and Python: A Harmonious Relationship'
+author: 'Caitlyn Warren'
+date: '2021-05-09'
+slug: r-studio-and-python-a-harmonious-relationship
+categories: []
+tags: []
+description: ''
+---
+
+### Combining Two Electronic Languages to Show School Spirit 
+
+Have you ever tried combining two different languages to convey one message? What language was it?   
+
+While many people may think of verbal languages such as spainish, french, chinese, or portuguese when I ask this question, I would like to present even more impressive languages to try this with. R Studio and Python are two distinct high-level programming languages used by many organizations for the purpose of data sciences. While these platforms are separate, they have the unique ability to communicate and work together to provide a singular output.
+
+For example, proud Texas Longhorns often use the phrase, "Hook 'em", to show their school spirit. To use this phrase electronically through R Studio AND Python, you must start by using an r code chunk to load up the package 'reticulate' within the R Studio platform. This package provides a set of tools for interoperability between Python and R Studio. Since we are using the r code chunk, we follow this step by defining the word "Hook" as the object 'go' using R Studio language. R Studio uses arrows to assign objects. 
+
+
+```{r}
+library(reticulate)
+go <-"Hook"
+```
+
+Afterwards, go ahead and use a python chunk within R Studio to define the word "'em" as 'longhorns'. Follow this by using the Python function "print()" to print a specified message to the screen. Since our first word is coded in R Studio language and we are using a Python chunk, place 'r.go' as the first object within print, then 'longhorns' as the second. Run the function and view your output!
+
+```{python}
+longhorns="'em"
+print(r.go,longhorns)
+```
+
+Just to further prove the functionality of these two platforms, an r chunk is shown below to provide the same output. The concatenate function in R Studio works like print, as it converts its arguments to character vectors. This time, no need to use the 'r.go' code, since we are now working under R Studio. Instead, place 'go' as the first argument, then use 'py$longhorns' as the second argument to specify that you are using Python code for the second message. Run this function, and you should see the same output!
+
+```{r}
+cat(c(go,py$longhorns))
+```
+
+The possibility of unique messages using the two languages are endless, go knock yourself out!
+Oh, and Hook 'em!
+
+![](/post/2021-05-09-r-studio-and-python-a-harmonious-relationship_files/bevo2.png)
